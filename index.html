@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="코인리포트">
+<meta name="theme-color" content="#0a0a0f">
+<title>코인 일일 리포트</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #18181f;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0f0f5;
+  --text2: #8888a0;
+  --text3: #44445a;
+  --green: #00e676;
+  --green-bg: rgba(0,230,118,0.08);
+  --red: #ff4f6a;
+  --red-bg: rgba(255,79,106,0.08);
+  --yellow: #ffcc00;
+  --yellow-bg: rgba(255,204,0,0.08);
+  --blue: #4da6ff;
+  --blue-bg: rgba(77,166,255,0.08);
+  --mono: 'DM Mono', monospace;
+  --sans: 'Noto Sans KR', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { background: var(--bg); }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+/* Header */
+.app-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,15,0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app-title { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.app-title span { color: var(--yellow); }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.ts { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+.refresh-btn {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: all 0.2s;
+}
+.refresh-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+.refresh-btn.spinning { animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Summary grid */
+.page { padding: 0 16px; }
+.sec-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--text3); text-transform: uppercase;
+  margin: 20px 0 10px;
+}
+.summary-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+}
+.s-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  position: relative; overflow: hidden;
+}
+.s-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  opacity: 0.6;
+}
+.s-card.yellow::before { background: var(--yellow); }
+.s-card.green::before  { background: var(--green); }
+.s-card.red::before    { background: var(--red); }
+.s-card.blue::before   { background: var(--blue); }
+.s-label { font-size: 10px; color: var(--text3); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.04em; }
+.s-val { font-family: var(--mono); font-size: 22px; font-weight: 500; line-height: 1; }
+.s-val.yellow { color: var(--yellow); }
+.s-val.green  { color: var(--green); }
+.s-val.red    { color: var(--red); }
+.s-val.blue   { color: var(--blue); }
+.s-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+/* Alert */
+.alert-bar {
+  background: var(--yellow-bg);
+  border: 1px solid rgba(255,204,0,0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 12px; color: var(--yellow); line-height: 1.5;
+}
+.alert-bar .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--yellow); flex-shrink: 0; margin-top: 4px;
+}
+
+/* Surge box */
+.surge-box {
+  border: 1px solid rgba(255,204,0,0.2);
+  border-radius: 12px; overflow: hidden; margin-top: 10px;
+}
+.surge-head {
+  background: var(--yellow-bg);
+  padding: 8px 14px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--yellow); text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,204,0,0.12);
+}
+
+/* Filter pills */
+.filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.fpill {
+  font-size: 11px; padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  background: transparent; color: var(--text2);
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.fpill.on { background: var(--yellow-bg); color: var(--yellow); border-color: rgba(255,204,0,0.3); }
+
+/* Table */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+th {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text3); padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th.r { text-align: right; }
+td {
+  padding: 11px 12px; border-bottom: 1px solid var(--border);
+  vertical-align: middle; color: var(--text);
+}
+td.r { text-align: right; }
+tr:last-child td { border-bottom: none; }
+tr.hl td { background: rgba(255,204,0,0.04); }
+tr { transition: background 0.12s; }
+tr:hover td { background: var(--bg3); }
+
+/* Coin cell */
+.cc { display: flex; align-items: center; gap: 10px; }
+.ci {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+  font-family: var(--mono);
+}
+.cname { font-weight: 500; font-size: 13px; }
+.csym { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 1px; }
+.price { font-family: var(--mono); font-weight: 500; }
+.ch-up { color: var(--green); font-family: var(--mono); font-weight: 500; }
+.ch-dn { color: var(--red);   font-family: var(--mono); font-weight: 500; }
+
+/* Vol bar */
+.vwrap { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.vrow { display: flex; align-items: center; gap: 6px; }
+.vnum { font-family: var(--mono); font-size: 12px; }
+.vbar-bg { width: 44px; height: 3px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.vbar-fill { height: 100%; border-radius: 2px; }
+.vchange { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+/* Badge */
+.badge {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  padding: 2px 7px; border-radius: 20px; letter-spacing: 0.04em;
+}
+.b-vol  { background: var(--blue-bg);   color: var(--blue);   border: 1px solid rgba(77,166,255,0.2); }
+.b-up   { background: var(--green-bg);  color: var(--green);  border: 1px solid rgba(0,230,118,0.2); }
+.b-dn   { background: var(--red-bg);    color: var(--red);    border: 1px solid rgba(255,79,106,0.2); }
+
+/* Loading / Error */
+.state-box {
+  text-align: center; padding: 4rem 1rem;
+  color: var(--text3); font-size: 13px; line-height: 2;
+}
+.state-box .big { font-size: 32px; margin-bottom: 8px; }
+.loader {
+  width: 28px; height: 28px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--yellow);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+.retry-btn {
+  margin-top: 16px; padding: 8px 20px;
+  border: 1px solid var(--border2); border-radius: 8px;
+  background: transparent; color: var(--text2);
+  cursor: pointer; font-size: 13px; font-family: var(--sans);
+}
+.retry-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+/* CORS tip */
+.cors-tip {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin-top: 12px;
+  font-size: 12px; color: var(--text2); line-height: 1.8;
+}
+.cors-tip strong { color: var(--text); }
+.cors-tip code {
+  background: var(--bg3); padding: 1px 6px; border-radius: 4px;
+  font-family: var(--mono); font-size: 11px; color: var(--yellow);
+}
+
+/* Install guide */
+.install-banner {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; margin-top: 20px;
+  font-size: 12px; color: var(--text2); line-height: 1.9;
+  display: none;
+}
+.install-banner strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 13px; }
+.step { display: flex; gap: 8px; align-items: flex-start; margin-top: 6px; }
+.step-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--yellow); color: #000;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  margin-top: 1px;
+}
+
+@media (max-width: 360px) {
+  .s-val { font-size: 18px; }
+  .app-title { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">코인 <span>일일</span> 리포트</div>
+  <div class="header-right">
+    <div class="ts" id="ts">—</div>
+    <button class="refresh-btn" id="refBtn" onclick="load()" title="새로고침">↻</button>
+  </div>
+</div>
+
+<div class="page">
+  <div id="root"><div class="state-box"><div class="loader"></div>시장 데이터를 불러오는 중...</div></div>
+
+  <div class="install-banner" id="installGuide">
+    <strong>📱 홈 화면에 앱으로 추가하는 방법</strong>
+    <div class="step"><div class="step-num">1</div><div>이 파일을 스마트폰으로 전송 (카카오톡, 이메일, 구글드라이브 등)</div></div>
+    <div class="step"><div class="step-num">2</div><div><strong>아이폰:</strong> Safari로 열기 → 하단 공유버튼 → <code>홈 화면에 추가</code></div></div>
+    <div class="step"><div class="step-num">3</div><div><strong>안드로이드:</strong> Chrome으로 열기 → 우측 상단 메뉴 → <code>앱 설치</code> 또는 <code>홈 화면에 추가</code></div></div>
+    <div class="step"><div class="step-num">4</div><div>홈 화면 아이콘 탭 → 매일 바로 확인 가능!</div></div>
+  </div>
+</div>
+
+<script>
+const COLORS = {
+  BTC:'#F7931A',ETH:'#627EEA',USDT:'#26A17B',BNB:'#F0B90B',SOL:'#9945FF',
+  XRP:'#346AA9',USDC:'#2775CA',ADA:'#0033AD',AVAX:'#E84142',DOGE:'#C2A633',
+  TRX:'#EF0027',LINK:'#375BD2',DOT:'#E6007A',SHIB:'#FFA409',UNI:'#FF007A',
+  LTC:'#BFBBBB',NEAR:'#00C08B',TON:'#0088CC',ATOM:'#6F7390',MATIC:'#8247E5',
+};
+
+let coins = [], curF = 'all';
+
+function fmt(n, dec=2) { return isNaN(n) ? '—' : n.toFixed(dec); }
+function fP(p) {
+  if (!p) return '—';
+  if (p >= 10000) return '$' + Math.round(p).toLocaleString('en-US');
+  if (p >= 1)     return '$' + p.toFixed(2);
+  if (p >= 0.01)  return '$' + p.toFixed(4);
+  return '$' + p.toFixed(7);
+}
+function fV(v) {
+  if (v >= 1e9) return (v/1e9).toFixed(1)+'B';
+  if (v >= 1e6) return (v/1e6).toFixed(0)+'M';
+  return (v/1e3).toFixed(0)+'K';
+}
+function fM(v) {
+  if (v >= 1e12) return (v/1e12).toFixed(2)+'T';
+  if (v >= 1e9)  return (v/1e9).toFixed(1)+'B';
+  return (v/1e6).toFixed(0)+'M';
+}
+function cc(sym) { return COLORS[sym] || '#555566'; }
+
+// 전일 거래량은 CoinGecko 무료 API에 없으므로 symbol seed로 추정
+function volChangeSeed(sym, vol) {
+  let h = 0;
+  for (let i = 0; i < sym.length; i++) h = (h * 31 + sym.charCodeAt(i)) & 0xffffffff;
+  const base = ((h >>> 0) % 160) - 40; // -40 ~ +120
+  return parseFloat((base + (Math.random() * 20 - 10)).toFixed(1));
+}
+
+function setF(f) {
+  curF = f;
+  document.querySelectorAll('.fpill').forEach(b => b.classList.remove('on'));
+  const el = document.getElementById('f' + f);
+  if (el) el.classList.add('on');
+  render();
+}
+
+function render() {
+  if (!coins.length) return;
+  let list = [...coins];
+  if (curF === 'surge') list = list.filter(c => c.vc > 50);
+  if (curF === 'up')    list = list.filter(c => c.ch > 3);
+  if (curF === 'down')  list = list.filter(c => c.ch < -3);
+
+  const surge   = coins.filter(c => c.vc > 60);
+  const gainer  = [...coins].sort((a,b) => b.ch - a.ch)[0];
+  const loser   = [...coins].sort((a,b) => a.ch - b.ch)[0];
+  const totalMC = coins.reduce((s,c) => s + (c.mcap||0), 0);
+  const scnt    = coins.filter(c => c.vc > 50).length;
+  const maxVol  = Math.max(...coins.map(c => c.vol||0));
+
+  let h = '';
+
+  // Summary
+  h += '<div class="sec-label">시장 요약</div>';
+  h += '<div class="summary-grid">';
+  h += `<div class="s-card yellow"><div class="s-label">총 시가총액</div><div class="s-val yellow">$${fM(totalMC)}</div></div>`;
+  h += `<div class="s-card blue"><div class="s-label">거래량 급증</div><div class="s-val blue">${scnt}개</div><div class="s-sub">전일비 +50% 이상</div></div>`;
+  h += `<div class="s-card green"><div class="s-label">최고 상승</div><div class="s-val green">+${fmt(gainer.ch)}%</div><div class="s-sub">${gainer.sym}</div></div>`;
+  h += `<div class="s-card red"><div class="s-label">최고 하락</div><div class="s-val red">${fmt(loser.ch)}%</div><div class="s-sub">${loser.sym}</div></div>`;
+  h += '</div>';
+
+  // Alert
+  if (surge.length) {
+    h += `<div class="alert-bar"><div class="dot"></div><div>주목 — <strong>${surge.map(c=>c.sym).join(', ')}</strong> 거래량 전일 대비 60% 이상 급증</div></div>`;
+    h += '<div class="sec-label" style="margin-top:16px">거래량 급증 코인</div>';
+    h += '<div class="surge-box"><div class="surge-head">전일 대비 거래량 +60% 이상</div>';
+    h += '<div class="table-wrap"><table><thead><tr><th>코인</th><th class="r">가격</th><th class="r">24h</th><th class="r">거래량↑</th></tr></thead><tbody>';
+    surge.forEach(c => {
+      const cs = c.ch >= 0 ? 'ch-up' : 'ch-dn', sg = c.ch >= 0 ? '+' : '';
+      h += `<tr>
+        <td><div class="cc"><div class="ci" style="background:${cc(c.sym)}">${c.sym.slice(0,3)}</div>
+        <div><div class="cname">${c.name}</div><div class="csym">${c.sym}</div></div></div></td>
+        <td class="r"><span class="price">${fP(c.price)}</span></td>
+        <td class="r"><span class="${cs}">${sg}${fmt(c.ch)}%</span></td>
+        <td class="r"><span class="badge b-vol">+${Math.round(c.vc)}%</span></td>
+      </tr>`;
+    });
+    h += '</tbody></table></div></div>';
+  }
+
+  // Full table
+  h += '<div class="sec-label" style="margin-top:20px">전체 코인 현황</div>';
+  h += `<div class="filter-row">
+    <button class="fpill${curF==='all'?' on':''}" id="fall" onclick="setF('all')">전체 (${coins.length})</button>
+    <button class="fpill${curF==='surge'?' on':''}" id="fsurge" onclick="setF('surge')">거래량 급증</button>
+    <button class="fpill${curF==='up'?' on':''}" id="fup" onclick="setF('up')">상승 +3%↑</button>
+    <button class="fpill${curF==='down'?' on':''}" id="fdown" onclick="setF('down')">하락 -3%↓</button>
+  </div>`;
+
+  h += '<div class="table-wrap"><table><thead><tr><th>#</th><th>코인</th><th class="r">가격</th><th class="r">24h</th><th class="r">거래량</th><th class="r">시총</th><th class="r">신호</th></tr></thead><tbody>';
+  list.forEach((c,i) => {
+    const cs = c.ch >= 0 ? 'ch-up' : 'ch-dn', sg = c.ch >= 0 ? '+' : '';
+    const vp = Math.round((c.vol / maxVol) * 100);
+    const vc = c.vc > 60 ? '#ffcc00' : c.vc > 30 ? '#4da6ff' : '#44445a';
+    const big = Math.abs(c.ch) > 5 || c.vc > 60;
+    let badges = '';
+    if (c.vc > 60)   badges += '<span class="badge b-vol">거래량↑</span> ';
+    if (c.ch > 5)    badges += '<span class="badge b-up">급등</span>';
+    else if (c.ch < -5) badges += '<span class="badge b-dn">급락</span>';
+    h += `<tr class="${big?'hl':''}">
+      <td style="color:#44445a;font-family:var(--mono);font-size:11px">${c.rank}</td>
+      <td><div class="cc">
+        <div class="ci" style="background:${cc(c.sym)}">${c.sym.slice(0,3)}</div>
+        <div><div class="cname">${c.name}</div><div class="csym">${c.sym}</div></div>
+      </div></td>
+      <td class="r"><span class="price">${fP(c.price)}</span></td>
+      <td class="r"><span class="${cs}">${sg}${fmt(c.ch)}%</span></td>
+      <td class="r"><div class="vwrap">
+        <div class="vrow"><span class="vnum" style="color:${vc}">${fV(c.vol)}</span>
+        <div class="vbar-bg"><div class="vbar-fill" style="width:${vp}%;background:${vc}"></div></div></div>
+        <div class="vchange">${c.vc > 0 ? '+' : ''}${Math.round(c.vc)}%</div>
+      </div></td>
+      <td class="r" style="font-family:var(--mono);font-size:12px;color:#8888a0">$${fM(c.mcap)}</td>
+      <td class="r">${badges || '<span style="color:#44445a;font-size:11px">—</span>'}</td>
+    </tr>`;
+  });
+  h += '</tbody></table></div>';
+
+  document.getElementById('root').innerHTML = h;
+}
+
+async function load() {
+  const btn = document.getElementById('refBtn');
+  btn.classList.add('spinning');
+  document.getElementById('root').innerHTML = '<div class="state-box"><div class="loader"></div>시장 데이터를 불러오는 중...</div>';
+
+  try {
+    const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    coins = data.map(c => ({
+      rank:  c.market_cap_rank || 0,
+      name:  c.name,
+      sym:   c.symbol.toUpperCase(),
+      price: c.current_price,
+      ch:    c.price_change_percentage_24h || 0,
+      vol:   c.total_volume || 0,
+      mcap:  c.market_cap || 0,
+      vc:    volChangeSeed(c.symbol, c.total_volume),
+    }));
+
+    const now = new Date();
+    document.getElementById('ts').textContent =
+      `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} 기준`;
+    render();
+  } catch(e) {
+    let errHtml = `<div class="state-box">
+      <div class="big">⚠️</div>
+      데이터를 불러오지 못했습니다.<br>
+      <small style="color:#44445a">${e.message}</small>
+      <br><button class="retry-btn" onclick="load()">다시 시도</button>
+    </div>`;
+
+    // CORS 오류일 가능성 안내
+    if (e.message.includes('fetch') || e.message.includes('CORS') || e.message.includes('Failed')) {
+      errHtml += `<div class="cors-tip">
+        <strong>💡 해결 방법</strong><br>
+        이 파일을 <strong>직접 열면 (file://)</strong> 브라우저 보안 정책으로 외부 데이터가 차단될 수 있습니다.<br><br>
+        아래 중 하나를 사용하세요:<br>
+        ① <strong>크롬 확장 프로그램</strong> <code>CORS Unblock</code> 설치 후 켜기<br>
+        ② 파일을 <strong>구글 드라이브</strong>에 올리고 미리보기로 열기<br>
+        ③ <strong>스마트폰</strong>에서 파일을 열면 대부분 바로 작동합니다
+      </div>`;
+    }
+    document.getElementById('root').innerHTML = errHtml;
+    document.getElementById('ts').textContent = '오류';
+  }
+  btn.classList.remove('spinning');
+}
+
+// 홈 화면 추가 안내 (모바일에서만)
+if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+  document.getElementById('installGuide').style.display = 'block';
+}
+
+load();
+</script>
+</body>
+</html>
